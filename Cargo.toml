@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
+futures = "0.3.28"
 reqwest = "0.11"
 scraper = "0.16.0"
 serde = { version = "1.0.126", features = ["derive"] }
