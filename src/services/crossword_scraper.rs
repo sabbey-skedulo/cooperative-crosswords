@@ -1,9 +1,8 @@
-use super::models::GuardianCrossword;
-
 extern crate futures;
 extern crate serde;
 use futures::future;
 use scraper::Html;
+use crate::models::guardian::GuardianCrossword;
 
 pub async fn scrape_crossword(series: &str, id: String) -> Result<GuardianCrossword, String> {
     let url = format!("https://www.theguardian.com/crosswords/{}/{}", series, id);
