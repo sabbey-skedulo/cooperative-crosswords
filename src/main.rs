@@ -1,3 +1,4 @@
+use crate::models::errors::{to_status_code, AppError};
 use crate::services::db_actions::{
     get_crossword_for_series_and_id, get_crossword_metadata_for_series,
 };
@@ -33,7 +34,7 @@ async fn update_crosswords(pool: Data<DbPool>) -> impl Responder {
     let result = services::crossword_service::update_crosswords(pool).await;
     return match result {
         Ok(message) => HttpResponse::Ok().body(message),
-        Err(error) => HttpResponse::BadRequest().body(error.to_string()),
+        Err(error) => build_error_response(error),
     };
 }
 
@@ -47,7 +48,7 @@ async fn get_crossword_data(pool: Data<DbPool>, path: web::Path<(String,)>) -> i
             HttpResponse::BadRequest().body("Couldn't parse crossword to a string"),
             |x| HttpResponse::Ok().body(x),
         ),
-        Err(error) => HttpResponse::NotFound().body(error.to_string()),
+        Err(error) => build_error_response(error),
     };
 }
 
@@ -59,8 +60,12 @@ async fn get_all_crossword_data(pool: Data<DbPool>) -> impl Responder {
             HttpResponse::BadRequest().body("Couldn't parse metadata to a string"),
             |x| HttpResponse::Ok().body(x),
         ),
-        Err(error) => HttpResponse::BadRequest().body(error.to_string()),
+        Err(error) => build_error_response(error),
     };
+}
+
+fn build_error_response(error: AppError) -> HttpResponse {
+    HttpResponse::build(to_status_code(error.clone())).body(error.clone().to_string())
 }
 
 fn initialize_db_pool() -> DbPool {
