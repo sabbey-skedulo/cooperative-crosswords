@@ -13,3 +13,11 @@ pub struct CrosswordMetadata {
     pub series: String,
     pub date: i64,
 }
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SolutionItemApi {
+    pub x: i64,
+    pub y: i64,
+    pub value: String,
+}
+

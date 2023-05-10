@@ -1,2 +1,6 @@
+pub mod crossword_db_actions;
 pub mod crossword_service;
-pub mod db_actions;
+pub mod solution_db_actions;
+pub mod solution_service;
+pub mod ws_server;
+pub mod ws_session;

@@ -8,7 +8,7 @@ use scraper::Html;
 use crate::models::db_models::Crossword;
 use crate::models::errors::AppError;
 use crate::models::guardian::GuardianCrossword;
-use crate::services::db_actions::{get_crossword_ids_for_series, store_crosswords};
+use crate::services::crossword_db_actions::{get_crossword_ids_for_series, store_crosswords};
 use crate::DbPool;
 
 pub async fn scrape_crossword(series: &str, id: String) -> Result<GuardianCrossword, AppError> {
@@ -66,12 +66,14 @@ pub async fn update_crosswords(pool: web::Data<DbPool>) -> Result<String, AppErr
     )
     .await?
     .iter()
-    .map(|guardian_crossword| serde_json::to_value(guardian_crossword).map(|json_value| Crossword {
-        id: guardian_crossword.number.to_string(),
-        series: series.to_string(),
-        crossword_json: json_value,
-        date: guardian_crossword.date,
-    }))
+    .map(|guardian_crossword| {
+        serde_json::to_value(guardian_crossword).map(|json_value| Crossword {
+            id: guardian_crossword.number.to_string(),
+            series: series.to_string(),
+            crossword_json: json_value,
+            date: guardian_crossword.date,
+        })
+    })
     .collect();
     let updated_crosswords = store_crosswords(pool.clone(), new_crosswords?).await?;
     Ok(format!(

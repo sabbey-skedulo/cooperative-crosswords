@@ -1,11 +1,18 @@
 use crate::models::errors::{to_status_code, AppError};
-use crate::services::db_actions::{
-    get_crossword_for_series_and_id, get_crossword_metadata_for_series,
+use actix::{Actor, Addr};
+use actix_web::web::{Data, Path, Payload};
+use actix_web::{
+    get, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
-use actix_web::web::Data;
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web_actors::ws::start;
 use diesel::r2d2;
 use diesel::PgConnection;
+
+use crate::services::crossword_db_actions::{
+    get_crossword_for_series_and_id, get_crossword_metadata_for_series,
+};
+use crate::services::ws_server::MoveServer;
+use crate::services::ws_session::WsSession;
 
 mod models;
 mod schema;
@@ -15,14 +22,20 @@ type DbPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    std::env::set_var("RUST_LOG", "actix_web=trace");
+    env_logger::init();
     dotenv::dotenv().ok();
     let pool = initialize_db_pool();
+    let server = MoveServer::new(pool.clone()).start();
     HttpServer::new(move || {
         App::new()
+            .wrap(middleware::Logger::default())
             .app_data(Data::new(pool.clone()))
+            .app_data(Data::new(server.clone()))
             .service(get_crossword_data)
             .service(get_all_crossword_data)
             .service(update_crosswords)
+            .service(start_connection)
     })
     .bind(("127.0.0.1", 8080))?
     .run()
@@ -62,6 +75,22 @@ async fn get_all_crossword_data(pool: Data<DbPool>) -> impl Responder {
         ),
         Err(error) => build_error_response(error),
     };
+}
+
+#[get("/move/{team_id}/{crossword_id}/{user_id}")]
+pub async fn start_connection(
+    req: HttpRequest,
+    stream: Payload,
+    path: Path<(String, String, String)>,
+    srv: Data<Addr<MoveServer>>,
+) -> Result<HttpResponse, Error> {
+    let ws = WsSession::new(
+        srv.get_ref().clone(),
+        path.2.clone(),
+        path.clone().0,
+        path.1.clone(),
+    );
+    start(ws, &req, stream)
 }
 
 fn build_error_response(error: AppError) -> HttpResponse {
