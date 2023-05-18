@@ -1,9 +1,10 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    crossword (id, series) {
+    crossword (id) {
         id -> Varchar,
         series -> Varchar,
+        series_no -> Int8,
         date -> Int8,
         crossword_json -> Jsonb,
     }

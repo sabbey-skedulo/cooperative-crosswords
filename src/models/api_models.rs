@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 pub struct CrosswordMetadata {
     pub id: String,
     pub series: String,
+    pub series_no: i64,
     pub date: i64,
 }
 
@@ -20,4 +21,3 @@ pub struct SolutionItemApi {
     pub y: i64,
     pub value: String,
 }
-

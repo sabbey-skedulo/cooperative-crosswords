@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::models::api_models::SolutionItemApi;
 use crate::services::solution_service::{retrieve_and_send_solution, update_solution};
 use crate::services::ws_session;
-use crate::services::ws_session::{WsSession};
+use crate::services::ws_session::WsSession;
 use crate::DbPool;
 use actix::prelude::*;
 use actix_web::web::Data;
@@ -74,7 +74,7 @@ impl Handler<Connect> for MoveServer {
         let result = futures::executor::block_on(retrieve_and_send_solution(
             Data::new(self.pool.clone()),
             msg.session.team.clone(),
-            msg.session.crossword.clone()
+            msg.session.crossword.clone(),
         ));
         return match result {
             Ok(m) => m,

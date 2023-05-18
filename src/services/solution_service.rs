@@ -62,7 +62,7 @@ pub async fn update_solution(
 pub async fn retrieve_and_send_solution(
     pool: web::Data<DbPool>,
     team_id: String,
-    crossword_id: String
+    crossword_id: String,
 ) -> Result<String, AppError> {
     let solution_items = get_solution(pool, crossword_id, team_id)
         .await?

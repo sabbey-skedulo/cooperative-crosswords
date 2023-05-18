@@ -10,19 +10,19 @@ use crate::models::db_models::Crossword;
 use crate::models::errors::AppError;
 use crate::models::errors::AppError::InternalServerError;
 use crate::models::guardian::GuardianCrossword;
-use crate::schema::crossword::dsl::{crossword, crossword_json, date, id, series};
+use crate::schema::crossword::dsl::{crossword, crossword_json, date, id, series, series_no};
 use crate::DbPool;
 
-pub async fn get_crossword_ids_for_series(
+pub async fn get_crossword_nos_for_series(
     pool: web::Data<DbPool>,
     series_for: String,
-) -> actix_web::Result<Vec<String>, AppError> {
+) -> actix_web::Result<Vec<i64>, AppError> {
     // use web::block to offload blocking Diesel queries without blocking server thread
     web::block(move || {
         let mut conn = pool.get()?;
         crossword
             .filter(series.eq(series_for))
-            .select(id)
+            .select(series_no)
             .load(&mut conn)
             .map_err(|e| AppError::InternalServerError(e.to_string()))
     })
@@ -38,7 +38,7 @@ pub async fn get_crossword_metadata_for_series(
         let mut conn = pool.get()?;
         crossword
             .filter(series.eq(series_for))
-            .select((id, series, date))
+            .select((id, series, series_no, date))
             .load(&mut conn)
             .map_err(|e| AppError::InternalServerError(e.to_string()))
     })

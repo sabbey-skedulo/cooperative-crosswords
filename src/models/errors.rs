@@ -2,6 +2,7 @@ use actix_web::error::BlockingError;
 use actix_web::http::StatusCode;
 use scraper::error::SelectorErrorKind;
 use std::fmt;
+use std::num::ParseIntError;
 
 #[derive(Clone, Debug)]
 pub enum AppError {
@@ -62,5 +63,11 @@ impl From<SelectorErrorKind<'_>> for AppError {
 impl From<String> for AppError {
     fn from(error: String) -> Self {
         AppError::InternalServerError(error)
+    }
+}
+
+impl From<ParseIntError> for AppError {
+    fn from(error: ParseIntError) -> Self {
+        AppError::InternalServerError(error.to_string())
     }
 }

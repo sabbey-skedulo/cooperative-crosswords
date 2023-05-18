@@ -1,5 +1,6 @@
 use crate::models::errors::{to_status_code, AppError};
 use actix::{Actor, Addr};
+use actix_cors::Cors;
 use actix_web::web::{Data, Path, Payload};
 use actix_web::{
     get, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
@@ -29,6 +30,7 @@ async fn main() -> std::io::Result<()> {
     let server = MoveServer::new(pool.clone()).start();
     HttpServer::new(move || {
         App::new()
+            .wrap(Cors::default().allow_any_method().allow_any_origin())
             .wrap(middleware::Logger::default())
             .app_data(Data::new(pool.clone()))
             .app_data(Data::new(server.clone()))
@@ -52,7 +54,7 @@ async fn update_crosswords(pool: Data<DbPool>) -> impl Responder {
 }
 
 #[get("/crossword/{id}")]
-async fn get_crossword_data(pool: Data<DbPool>, path: web::Path<(String,)>) -> impl Responder {
+async fn get_crossword_data(pool: Data<DbPool>, path: Path<(String,)>) -> impl Responder {
     let crossword_id = path.into_inner().0;
     let crossword_data =
         get_crossword_for_series_and_id(pool, crossword_id, "cryptic".to_string()).await;

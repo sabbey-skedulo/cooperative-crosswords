@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct Crossword {
     pub id: String,
     pub series: String,
+    pub series_no: i64,
     pub date: i64,
     pub crossword_json: serde_json::Value,
 }

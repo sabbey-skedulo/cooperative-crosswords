@@ -42,7 +42,7 @@ impl Actor for WsSession {
                 match res {
                     Ok(m) => {
                         ctx.text(m);
-                    },
+                    }
                     _ => ctx.stop(),
                 }
                 fut::ready(())
