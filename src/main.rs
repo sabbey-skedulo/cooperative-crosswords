@@ -3,7 +3,7 @@ use actix::{Actor, Addr};
 use actix_cors::Cors;
 use actix_web::web::{Data, Path, Payload};
 use actix_web::{
-    get, middleware, post, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
+    get, middleware, post, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use actix_web_actors::ws::start;
 use diesel::r2d2;
