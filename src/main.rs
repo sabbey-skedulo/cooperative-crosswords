@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
             .service(update_crosswords)
             .service(start_connection)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(std::env::var("HOST_PORT").unwrap_or("127.0.0.1:8080".to_string()))?
     .run()
     .await
 }
