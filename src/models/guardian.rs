@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use serde::Serialize;
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GuardianCrossword {
     pub id: String,
@@ -18,21 +18,21 @@ pub struct GuardianCrossword {
     pub pdf: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GuardianCreator {
     pub name: String,
     pub web_url: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GuardianEntry {
     pub id: String,
     pub number: i64,
     pub human_number: String,
     pub clue: String,
-    pub direction: String,
+    pub direction: GuardianDirection,
     pub length: i64,
     pub group: Vec<String>,
     pub position: Position,
@@ -40,14 +40,23 @@ pub struct GuardianEntry {
     pub solution: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Position {
     pub x: i64,
     pub y: i64,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum GuardianDirection {
+    #[serde(rename = "across")]
+    Across,
+    #[serde(rename = "down")]
+    Down,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SeparatorLocations {
     #[serde(rename = ",")]
@@ -55,7 +64,7 @@ pub struct SeparatorLocations {
     pub field: Vec<i64>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Dimensions {
     pub cols: i64,

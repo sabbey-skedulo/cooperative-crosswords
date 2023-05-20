@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::models::api_models::SolutionItemApi;
+use crate::models::api_models::SolutionItemDto;
 use crate::services::solution_service::{retrieve_and_send_solution, update_solution};
 use crate::services::ws_session;
 use crate::services::ws_session::WsSession;
@@ -27,7 +27,7 @@ pub struct Disconnect {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct Move {
-    pub solution_items: Vec<SolutionItemApi>,
+    pub solution_items: Vec<SolutionItemDto>,
     pub sender: WsSession,
 }
 
@@ -47,7 +47,7 @@ impl MoveServer {
 }
 
 impl MoveServer {
-    fn broadcast_moves(&self, sender: WsSession, solution_items: Vec<SolutionItemApi>) {
+    fn broadcast_moves(&self, sender: WsSession, solution_items: Vec<SolutionItemDto>) {
         for session in self.sessions.clone().into_iter() {
             let ws_session = session.1.session;
             if ws_session.crossword == sender.crossword && ws_session.team == sender.team {

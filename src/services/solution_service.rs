@@ -1,7 +1,7 @@
 extern crate futures;
 extern crate serde;
 
-use crate::models::api_models::SolutionItemApi;
+use crate::models::api_models::SolutionItemDto;
 use crate::models::db_models::SolutionItem;
 use crate::models::errors::AppError;
 use crate::services::solution_db_actions::{get_solution, store_or_update_solution};
@@ -11,7 +11,7 @@ use std::collections::HashMap;
 
 pub async fn update_solution(
     pool: web::Data<DbPool>,
-    solution_items_api: Vec<SolutionItemApi>,
+    solution_items_api: Vec<SolutionItemDto>,
     user_id: String,
     team_id: String,
     crossword_id: String,

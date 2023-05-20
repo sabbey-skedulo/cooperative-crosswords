@@ -3,13 +3,17 @@ extern crate serde;
 
 use actix_web::web;
 use futures::future;
+use itertools::Itertools;
 use scraper::Html;
+use std::collections::HashMap;
 use std::num::ParseIntError;
 use uuid::Uuid;
 
+use crate::models::api_models::Cell::{Black, White};
+use crate::models::api_models::{Cell, CellData, Clue, ClueId, Clues, CrosswordDto, Direction};
 use crate::models::db_models::Crossword;
 use crate::models::errors::AppError;
-use crate::models::guardian::GuardianCrossword;
+use crate::models::guardian::{GuardianCrossword, GuardianDirection, GuardianEntry};
 use crate::services::crossword_db_actions::{get_crossword_nos_for_series, store_crosswords};
 use crate::DbPool;
 
@@ -84,4 +88,83 @@ pub async fn update_crosswords(pool: web::Data<DbPool>) -> Result<String, AppErr
         "Successfully scraped {} new crosswords",
         updated_crosswords.to_string()
     ))
+}
+
+pub fn guardian_to_crossword_dto(guardian_crossword: GuardianCrossword) -> CrosswordDto {
+    let (across, down): (Vec<GuardianEntry>, Vec<GuardianEntry>) = guardian_crossword
+        .clone()
+        .entries
+        .into_iter()
+        .partition(|n| n.direction == GuardianDirection::Across);
+    fn to_clues(entries: Vec<GuardianEntry>) -> Vec<Clue> {
+        entries
+            .iter()
+            .map(|entry| Clue {
+                number: entry.number,
+                value: entry.clone().clue,
+            })
+            .collect()
+    }
+    let index_to_clue_items: HashMap<i64, Vec<(ClueId, Option<i64>)>> = guardian_crossword
+        .clone()
+        .entries
+        .iter()
+        .flat_map(|x| to_interim_clue(x.clone(), guardian_crossword.dimensions.cols))
+        .into_group_map();
+    let grid = (0..(guardian_crossword.dimensions.cols * guardian_crossword.dimensions.rows))
+        .map(|x| get_cell(index_to_clue_items.get(&x)))
+        .collect();
+    CrosswordDto {
+        number_of_columns: guardian_crossword.dimensions.cols,
+        number_of_rows: guardian_crossword.dimensions.rows,
+        grid,
+        clues: Clues {
+            across: to_clues(across),
+            down: to_clues(down),
+        },
+    }
+}
+
+fn to_interim_clue(entry: GuardianEntry, columns: i64) -> Vec<(i64, (ClueId, Option<i64>))> {
+    let clue_id = ClueId {
+        number: entry.number,
+        direction: guardian_to_dto_direction(entry.clone().direction),
+    };
+    let initial_index = entry.position.x + entry.position.y * columns;
+    let increment = match clue_id.direction {
+        Direction::Across => 1,
+        Direction::Down => columns,
+    };
+    let first_position = (initial_index, (clue_id.clone(), Some(entry.number)));
+    let mut other_positions: Vec<(i64, (ClueId, Option<i64>))> = (1..entry.length)
+        .map(|i| (initial_index + i * increment, (clue_id.clone(), None)))
+        .collect();
+    other_positions.push(first_position);
+    other_positions
+}
+fn guardian_to_dto_direction(direction: GuardianDirection) -> Direction {
+    match direction {
+        GuardianDirection::Across => Direction::Across,
+        GuardianDirection::Down => Direction::Down,
+    }
+}
+
+fn get_cell(clue_items: Option<&Vec<(ClueId, Option<i64>)>>) -> Cell {
+    match clue_items.clone() {
+        None => Black,
+        Some(clues) => {
+            let first_clue = clues.get(0);
+            let second_clue = clues.get(1);
+            let number = first_clue
+                .and_then(|&(_, n)| n)
+                .or_else(|| second_clue.and_then(|&(_, n)| n));
+            first_clue
+                .map(|(clue_id, _)| White { cell_data : CellData {
+                    number,
+                    clue_id: clue_id.clone(),
+                    clue_id_2: second_clue.map(|(other, _)| other.clone()),
+                }})
+                .unwrap_or(Black)
+        }
+    }
 }

@@ -5,12 +5,13 @@ use diesel::row::NamedRow;
 use diesel::{ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl};
 use serde_json::Value;
 
-use crate::models::api_models::CrosswordMetadata;
+use crate::models::api_models::{Clue, Clues, CrosswordDto, CrosswordMetadata};
 use crate::models::db_models::Crossword;
 use crate::models::errors::AppError;
 use crate::models::errors::AppError::InternalServerError;
-use crate::models::guardian::GuardianCrossword;
+use crate::models::guardian::{GuardianCrossword, GuardianEntry};
 use crate::schema::crossword::dsl::{crossword, crossword_json, date, id, series, series_no};
+use crate::services::crossword_service::guardian_to_crossword_dto;
 use crate::DbPool;
 
 pub async fn get_crossword_nos_for_series(
@@ -49,7 +50,7 @@ pub async fn get_crossword_for_series_and_id(
     pool: web::Data<DbPool>,
     id_for: String,
     series_for: String,
-) -> actix_web::Result<GuardianCrossword, AppError> {
+) -> actix_web::Result<CrosswordDto, AppError> {
     // use web::block to offload blocking Diesel queries without blocking server thread
     let result: Value = web::block(move || {
         let mut conn = pool.get()?;
@@ -61,7 +62,8 @@ pub async fn get_crossword_for_series_and_id(
             .map_err(|_| AppError::CrosswordNotFound(id_for.clone()))
     })
     .await??;
-    serde_json::from_value(result).map_err(|e| AppError::InternalServerError(e.to_string()))
+    let guardian_crossword: GuardianCrossword = serde_json::from_value(result)?;
+    Ok(guardian_to_crossword_dto(guardian_crossword))
 }
 
 pub async fn store_crosswords(
