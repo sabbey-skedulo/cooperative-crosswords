@@ -64,7 +64,9 @@ pub enum Direction {
 pub enum Cell {
     Black,
     #[serde(rename_all = "camelCase")]
-    White { cell_data: CellData },
+    White {
+        cell_data: CellData,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Queryable)]

@@ -159,11 +159,13 @@ fn get_cell(clue_items: Option<&Vec<(ClueId, Option<i64>)>>) -> Cell {
                 .and_then(|&(_, n)| n)
                 .or_else(|| second_clue.and_then(|&(_, n)| n));
             first_clue
-                .map(|(clue_id, _)| White { cell_data : CellData {
-                    number,
-                    clue_id: clue_id.clone(),
-                    clue_id_2: second_clue.map(|(other, _)| other.clone()),
-                }})
+                .map(|(clue_id, _)| White {
+                    cell_data: CellData {
+                        number,
+                        clue_id: clue_id.clone(),
+                        clue_id_2: second_clue.map(|(other, _)| other.clone()),
+                    },
+                })
                 .unwrap_or(Black)
         }
     }
