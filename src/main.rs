@@ -27,6 +27,7 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=trace");
     env_logger::init();
     dotenv::dotenv().ok();
+    println!("Starting server");
     let pool = initialize_db_pool()?;
     let server = MoveServer::new(pool.clone()).start();
     HttpServer::new(move || {
@@ -108,7 +109,7 @@ fn initialize_db_pool() -> std::io::Result<DbPool> {
         )
     })?;
     let manager = r2d2::ConnectionManager::<PgConnection>::new(conn_spec);
-    r2d2::Pool::builder().max_size(32).build(manager).map_err(|e| {
+    r2d2::Pool::builder().max_size(5).build(manager).map_err(|e| {
         std::io::Error::new(
             ErrorKind::ConnectionAborted,
             format!("Cannot connect to database: {}", e.to_string()),
