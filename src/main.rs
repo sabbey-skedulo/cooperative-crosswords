@@ -8,6 +8,7 @@ use actix_web::{
 use actix_web_actors::ws::start;
 use diesel::r2d2;
 use diesel::PgConnection;
+use std::io::ErrorKind;
 
 use crate::services::crossword_db_actions::{
     get_crossword_for_series_and_id, get_crossword_metadata_for_series,
@@ -26,7 +27,7 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=trace");
     env_logger::init();
     dotenv::dotenv().ok();
-    let pool = initialize_db_pool();
+    let pool = initialize_db_pool()?;
     let server = MoveServer::new(pool.clone()).start();
     HttpServer::new(move || {
         App::new()
@@ -99,10 +100,18 @@ fn build_error_response(error: AppError) -> HttpResponse {
     HttpResponse::build(to_status_code(error.clone())).body(error.clone().to_string())
 }
 
-fn initialize_db_pool() -> DbPool {
-    let conn_spec = std::env::var("DATABASE_URL").expect("DATABASE_URL should be set");
+fn initialize_db_pool() -> std::io::Result<DbPool> {
+    let conn_spec = std::env::var("DATABASE_URL").map_err(|e| {
+        std::io::Error::new(
+            ErrorKind::ConnectionAborted,
+            format!("Cannot read env variable DATABASE_URL: {}", e.to_string()),
+        )
+    })?;
     let manager = r2d2::ConnectionManager::<PgConnection>::new(conn_spec);
-    r2d2::Pool::builder()
-        .build(manager)
-        .expect("database URL should be valid path to SQLite DB file")
+    r2d2::Pool::builder().max_size(32).build(manager).map_err(|e| {
+        std::io::Error::new(
+            ErrorKind::ConnectionAborted,
+            format!("Cannot connect to database: {}", e.to_string()),
+        )
+    })
 }

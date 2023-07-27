@@ -103,12 +103,18 @@ impl Handler<Move> for MoveServer {
             msg.sender.crossword.clone(),
         ));
         match result {
-            Ok(_) => {
-                self.broadcast_moves(msg.sender.clone(), msg.solution_items.clone());
+            Ok(moves) => {
+                self.broadcast_moves(msg.sender.clone(), moves);
             }
             Err(e) => {
-                println!("{}", e.to_string())
-            }
+                self.sessions.get(&msg.sender.id).map(|connect| {
+                    connect.addr.do_send(ws_session::Message(format!(
+                        "Error saving moves: {}",
+                        e.to_string()
+                    )))
+                });
+                ()
+            },
         };
     }
 }

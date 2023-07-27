@@ -16,6 +16,7 @@ pub struct GuardianCrossword {
     pub dimensions: Dimensions,
     pub crossword_type: String,
     pub pdf: String,
+    pub instructions: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

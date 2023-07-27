@@ -15,16 +15,7 @@ pub async fn update_solution(
     user_id: String,
     team_id: String,
     crossword_id: String,
-) -> Result<String, AppError> {
-    let new_solution_items: Vec<SolutionItem> = solution_items_api
-        .iter()
-        .map(|solution_item| SolutionItem {
-            x: solution_item.x,
-            y: solution_item.y,
-            value: solution_item.value.to_owned(),
-            modified_by: user_id.clone(),
-        })
-        .collect();
+) -> Result<Vec<SolutionItemDto>, AppError> {
     let current_solution_items = get_solution(pool.clone(), crossword_id.clone(), team_id.clone())
         .await?
         .unwrap_or(Vec::new());
@@ -34,19 +25,27 @@ pub async fn update_solution(
         .map(|item| ((item.x, item.y), item))
         .collect();
 
-    for solution_item in new_solution_items {
+    let new_solution_items: Vec<SolutionItem> = solution_items_api
+        .iter()
+        .map(|solution_item| SolutionItem {
+            x: solution_item.x,
+            y: solution_item.y,
+            value: solution_item.value.to_owned(),
+            modified_by: user_id.clone(),
+        })
+        .filter(|solution_item| {
+            let position = (solution_item.x, solution_item.y);
+            let existing_item = position_to_item.get(&position);
+            match existing_item {
+                None => true,
+                Some(item) => item.value != solution_item.value,
+            }
+        })
+        .collect();
+
+    for solution_item in new_solution_items.clone() {
         let position = (solution_item.x, solution_item.y);
-        let existing_item = position_to_item.get(&position);
-        match existing_item {
-            None => {
-                position_to_item.insert(position, solution_item);
-            }
-            Some(item) => {
-                if item.value != solution_item.value {
-                    position_to_item.insert(position, solution_item);
-                }
-            }
-        }
+        position_to_item.insert(position, solution_item);
     }
 
     store_or_update_solution(
@@ -56,7 +55,15 @@ pub async fn update_solution(
         position_to_item.into_values().collect(),
     )
     .await?;
-    Ok("Success".to_string())
+    Ok(new_solution_items
+        .clone()
+        .iter()
+        .map(|solution_item| SolutionItemDto {
+            x: solution_item.x,
+            y: solution_item.y,
+            value: solution_item.clone().value,
+        })
+        .collect())
 }
 
 pub async fn retrieve_and_send_solution(
