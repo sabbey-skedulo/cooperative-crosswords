@@ -46,11 +46,11 @@ pub async fn get_crossword_metadata_for_series(
     .await?
 }
 
-pub async fn get_crossword_for_series_and_id(
+pub async fn get_guardian_crossword_for_series_and_id(
     pool: web::Data<DbPool>,
     id_for: String,
     series_for: String,
-) -> actix_web::Result<CrosswordDto, AppError> {
+)-> actix_web::Result<GuardianCrossword, AppError> {
     // use web::block to offload blocking Diesel queries without blocking server thread
     let result: Value = web::block(move || {
         let mut conn = pool.get()?;
@@ -61,8 +61,15 @@ pub async fn get_crossword_for_series_and_id(
             .first(&mut conn)
             .map_err(|_| AppError::CrosswordNotFound(id_for.clone()))
     })
-    .await??;
-    let guardian_crossword: GuardianCrossword = serde_json::from_value(result)?;
+        .await??;
+    serde_json::from_value(result).map_err(|e| InternalServerError(e.to_string()))
+}
+pub async fn get_crossword_for_series_and_id(
+    pool: web::Data<DbPool>,
+    id_for: String,
+    series_for: String,
+) -> actix_web::Result<CrosswordDto, AppError> {
+    let guardian_crossword: GuardianCrossword = get_guardian_crossword_for_series_and_id(pool, id_for, series_for).await?;
     Ok(guardian_to_crossword_dto(guardian_crossword))
 }
 

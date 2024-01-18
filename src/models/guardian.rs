@@ -15,7 +15,7 @@ pub struct GuardianCrossword {
     pub date_solution_available: i64,
     pub dimensions: Dimensions,
     pub crossword_type: String,
-    pub pdf: String,
+    pub pdf: Option<String>,
     pub instructions: Option<String>,
 }
 

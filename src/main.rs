@@ -10,9 +10,7 @@ use diesel::r2d2;
 use diesel::PgConnection;
 use std::io::ErrorKind;
 
-use crate::services::crossword_db_actions::{
-    get_crossword_for_series_and_id, get_crossword_metadata_for_series,
-};
+use crate::services::crossword_db_actions::{get_crossword_for_series_and_id, get_crossword_metadata_for_series, get_guardian_crossword_for_series_and_id};
 use crate::services::ws_server::MoveServer;
 use crate::services::ws_session::WsSession;
 
@@ -38,6 +36,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(server.clone()))
             .service(get_crossword_data)
             .service(get_all_crossword_data)
+            .service(get_crossword_data_guardian)
             .service(update_crosswords)
             .service(start_connection)
     })
@@ -60,6 +59,20 @@ async fn get_crossword_data(pool: Data<DbPool>, path: Path<(String,)>) -> impl R
     let crossword_id = path.into_inner().0;
     let crossword_data =
         get_crossword_for_series_and_id(pool, crossword_id, "cryptic".to_string()).await;
+    return match crossword_data {
+        Ok(message) => serde_json::to_string(&message).map_or(
+            HttpResponse::BadRequest().body("Couldn't parse crossword to a string"),
+            |x| HttpResponse::Ok().body(x),
+        ),
+        Err(error) => build_error_response(error),
+    };
+}
+
+#[get("/crossword/{id}/guardian")]
+async fn get_crossword_data_guardian(pool: Data<DbPool>, path: Path<(String,)>) -> impl Responder {
+    let crossword_id = path.into_inner().0;
+    let crossword_data =
+        get_guardian_crossword_for_series_and_id(pool, crossword_id, "cryptic".to_string()).await;
     return match crossword_data {
         Ok(message) => serde_json::to_string(&message).map_or(
             HttpResponse::BadRequest().body("Couldn't parse crossword to a string"),
